@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PSI Dashboard - Market Intelligence</title>
+    <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #E0592A;
+            --primary-light: #FCEEE9;
+            --deep-navy: #2C2D65;
+            --subtext: #848A92;
+            --stroke: #E7EAE9;
+            --surface: #F5F7F9;
+            --white: #FFFFFF;
+            --text-main: #111827;
+            --success: #22C55E;
+            --danger: #EF4444;
+            --cyan-accent: #00acc1;
+            --purple-accent: #8b5cf6;
+            --orange-accent: #f59e0b;
+            --radius-md: 12px;
+            --radius-sm: 8px;
+            --shadow-base: 0 4px 20px 0 rgba(0, 0, 0, 0.03);
+        }
+
+        body { font-family: 'Lato', sans-serif; background-color: var(--surface); margin: 0; display: flex; color: var(--text-main); }
+
+        /* Sidebar Styling */
+        .sidebar { width: 260px; background: var(--white); height: 100vh; border-right: 1px solid var(--stroke); display: flex; flex-direction: column; position: fixed; padding: 24px 16px; z-index: 100; box-sizing: border-box; }
+        .logo { height: 32px; margin-bottom: 40px; padding-left: 8px; }
+        .nav-group { display: flex; flex-direction: column; gap: 4px; }
+        .nav-item { padding: 12px 16px; border-radius: var(--radius-sm); color: var(--deep-navy); text-decoration: none; font-size: 14px; font-weight: 600; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
+        .sub-menu { overflow: hidden; display: flex; flex-direction: column; padding-left: 12px; }
+        .sub-item { padding: 10px 16px; font-size: 13px; color: var(--subtext); text-decoration: none; border-left: 2px solid var(--stroke); cursor: pointer; }
+        .sub-item.active { color: var(--primary); border-left-color: var(--primary); font-weight: 700; background: var(--primary-light); }
+
+        /* Main Content */
+        .main-content { margin-left: 260px; padding: 40px; width: calc(100% - 260px); box-sizing: border-box; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        /* Shared Components */
+        .card { background: var(--white); border-radius: var(--radius-md); padding: 24px; border: 1px solid var(--stroke); box-shadow: var(--shadow-base); margin-bottom: 24px; }
+        .filter-bar { display: flex; justify-content: space-between; align-items: center; background: var(--white); padding: 16px 24px; border-radius: var(--radius-md); border: 1px solid var(--stroke); margin-bottom: 30px; }
+        .city-toggle { display: flex; background: var(--surface); padding: 4px; border-radius: 10px; border: 1px solid var(--stroke); }
+        .city-btn { padding: 8px 16px; border: none; background: transparent; font-size: 13px; font-weight: 700; color: var(--subtext); cursor: pointer; border-radius: 8px; }
+        .city-btn.active { background: var(--white); color: var(--deep-navy); box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        .dropdown-select { padding: 10px 16px; border-radius: 8px; border: 1px solid var(--stroke); font-family: 'Lato'; font-size: 13px; font-weight: 600; outline: none; cursor: pointer; }
+
+        /* Section Specifics */
+        .instruction-banner { background: #EEF2FF; border: 1px solid #E0E7FF; padding: 16px 24px; border-radius: var(--radius-md); display: flex; align-items: center; gap: 16px; margin-bottom: 24px; }
+        .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+        .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+        .gauge-full { height: 12px; background: #EEE; border-radius: 10px; display: flex; position: relative; margin: 25px 0; }
+        .signal-progress-bar { height: 8px; border-radius: 4px; background: #F1F5F9; width: 100%; position: relative; overflow: hidden; margin: 15px 0; }
+        .download-btn { background: var(--deep-navy); color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 700; cursor: pointer; width: 100%; }
+        
+        /* Comparison */
+        .compare-panel { background: var(--surface); padding: 20px; border-radius: var(--radius-md); border: 1px solid var(--stroke); }
+        .chart-container { height: 250px; display: flex; align-items: flex-end; gap: 4px; border-bottom: 1px solid var(--stroke); }
+        .bar-group { flex: 1; display: flex; align-items: flex-end; gap: 2px; height: 100%; }
+        .bar-a { background: #3B82F6; width: 100%; }
+        .bar-b { background: #10B981; width: 100%; }
+    </style>
+</head>
+<body>
+
+    <nav class="sidebar">
+        <img src="https://res.cloudinary.com/dfejvtpzr/image/upload/v1777294008/Psi_Logo_blue_hujns2.svg" alt="PSI" class="logo">
+        <div class="nav-group">
+            <div class="nav-item">Market Overview <span>▼</span></div>
+            <div class="sub-menu">
+                <a onclick="switchTab('overview', this)" class="sub-item active">Overview</a>
+                <a onclick="switchTab('trends', this)" class="sub-item">Trends</a>
+                <a onclick="switchTab('signals', this)" class="sub-item">Signals</a>
+                <a onclick="switchTab('reports', this)" class="sub-item">Reports</a>
+                <a onclick="switchTab('compare', this)" class="sub-item">Compare</a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        <!-- Top Filter Bar -->
+        <div class="filter-bar">
+            <div style="display:flex; gap:12px; align-items:center;">
+                <div class="city-toggle">
+                    <button class="city-btn active" onclick="toggleCity('Abudhabi', this)">Abudhabi</button>
+                    <button class="city-btn" onclick="toggleCity('Dubai', this)">Dubai</button>
+                </div>
+                <select class="dropdown-select"><option>Last 30 Days</option></select>
+            </div>
+            <div id="data-status" style="background:#FEF3C7; color:#92400E; padding:6px 12px; border-radius:6px; font-size:12px; font-weight:800;">● Stale (2h ago)</div>
+        </div>
+
+        <!-- TABS CONTENT -->
+
+        <!-- 1. TRENDS TAB -->
+        <div id="tab-trends" class="tab-content">
+            <div class="instruction-banner">
+                <span>💡</span>
+                <div>
+                    <h4 style="margin:0; color:#3730A3;">Understanding the trends</h4>
+                    <p style="margin:0; font-size:13px; color:#4338CA;">Look for rising transaction volume alongside rising prices — that's the strongest buy signal.</p>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3 style="margin:0;">PSI Market Index — <span class="current-city">Abudhabi</span></h3>
+                <div style="display:flex; align-items:center; gap:20px; margin:20px 0;">
+                    <span style="font-size:64px; font-weight:900; color:var(--success);">81</span>
+                    <div>
+                        <div style="color:var(--success); font-weight:800;">● STRONG BUY</div>
+                        <div style="font-size:13px; color:var(--success);">↑ +5.0 vs yesterday</div>
+                    </div>
+                </div>
+                <div class="gauge-full">
+                    <div style="width:40%; background:#EF4444; border-radius:10px 0 0 10px;"></div>
+                    <div style="width:20%; background:#F59E0B;"></div>
+                    <div style="width:20%; background:#10B981;"></div>
+                    <div style="width:20%; background:#059669; border-radius:0 10px 10px 0;"></div>
+                    <div style="position:absolute; left:81%; top:-10px; width:4px; height:32px; background:var(--deep-navy); border:2px solid white;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. SIGNALS TAB -->
+        <div id="tab-signals" class="tab-content">
+            <div class="instruction-banner">
+                <span>🎯</span>
+                <div>
+                    <h4 style="margin:0; color:#3730A3;">What the signals mean</h4>
+                    <p style="margin:0; font-size:13px; color:#4338CA;">Each signal is scored 0–100 measuring different market dimensions.</p>
+                </div>
+            </div>
+
+            <div class="card">
+                <div style="display:flex; justify-content:space-between;">
+                    <h4 style="margin:0;">📈 Market Activity</h4>
+                    <div style="text-align:right;"><div style="font-size:24px; font-weight:900; color:#0EA5E9;">100</div><div style="font-size:10px; font-weight:800; color:#0EA5E9;">VERY STRONG</div></div>
+                </div>
+                <p style="font-size:13px; color:var(--subtext);">Tracks the volume of transactions and listings across Bayut, PropertyFinder, and DLD.</p>
+                <div class="signal-progress-bar"><div style="width:100%; height:100%; background:#0EA5E9;"></div></div>
+            </div>
+            <!-- More signal cards would follow same pattern -->
+        </div>
+
+        <!-- 3. REPORTS TAB -->
+        <div id="tab-reports" class="tab-content">
+            <div class="card">
+                <h3 style="margin:0;">Report Summary — <span class="current-city">Abudhabi</span></h3>
+                <div class="grid-4" style="margin-top:20px; text-align:center;">
+                    <div><small>PSI INDEX</small><h3>81</h3></div>
+                    <div><small>RECOMMENDATION</small><h3 style="color:var(--success)">STRONG BUY</h3></div>
+                    <div><small>AREAS TRACKED</small><h3>50</h3></div>
+                    <div><small>DAYS OF DATA</small><h3>120</h3></div>
+                </div>
+            </div>
+            <div class="grid-3">
+                <div class="card" style="text-align:center;">
+                    <h4>Full Market Report</h4>
+                    <p style="font-size:11px; color:var(--subtext);">All signals and daily trends</p>
+                    <button class="download-btn">⬇ Download CSV</button>
+                </div>
+                <div class="card" style="text-align:center;">
+                    <h4>Area Intelligence</h4>
+                    <p style="font-size:11px; color:var(--subtext);">Per-area metrics</p>
+                    <button class="download-btn">⬇ Download CSV</button>
+                </div>
+                <div class="card" style="text-align:center;">
+                    <h4>Trends Data</h4>
+                    <p style="font-size:11px; color:var(--subtext);">Transaction history</p>
+                    <button class="download-btn">⬇ Download CSV</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. COMPARE TAB -->
+        <div id="tab-compare" class="tab-content">
+            <div class="grid-2" style="margin-bottom:24px;">
+                <div class="compare-panel">
+                    <h5 style="margin:0 0 10px 0;"><span style="color:#3B82F6">●</span> Period A (Comparison)</h5>
+                    <input type="text" value="01/04/2026 → 30/04/2026" class="dropdown-select" style="width:100%;">
+                </div>
+                <div class="compare-panel">
+                    <h5 style="margin:0 0 10px 0;"><span style="color:#10B981">●</span> Period B (Baseline)</h5>
+                    <input type="text" value="02/03/2026 → 31/03/2026" class="dropdown-select" style="width:100%;">
+                </div>
+            </div>
+
+            <div class="grid-4">
+                <div class="card"><small>TRANSACTIONS</small><div>4,625 → 4,501</div><div style="color:var(--danger)">↘ -2.7%</div></div>
+                <div class="card"><small>SALES VALUE</small><div>AED 23.1B → 22.2B</div><div style="color:var(--danger)">↘ -3.9%</div></div>
+                <div class="card"><small>AVG PRICE/SQFT</small><div>1,252 → 1,245</div><div style="color:var(--danger)">↘ -0.6%</div></div>
+                <div class="card"><small>AVG PSI INDEX</small><div>72.8 → 77.1</div><div style="color:var(--success)">↗ +5.9%</div></div>
+            </div>
+
+            <div class="card">
+                <h4>Day-by-Day Comparison</h4>
+                <div class="chart-container">
+                    <div class="bar-group"><div class="bar-b" style="height:60%"></div><div class="bar-a" style="height:55%"></div></div>
+                    <div class="bar-group"><div class="bar-b" style="height:70%"></div><div class="bar-a" style="height:65%"></div></div>
+                    <div class="bar-group"><div class="bar-b" style="height:50%"></div><div class="bar-a" style="height:48%"></div></div>
+                    <div class="bar-group"><div class="bar-b" style="height:85%"></div><div class="bar-a" style="height:80%"></div></div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        function switchTab(tabId, element) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.sub-item').forEach(i => i.classList.remove('active'));
+            document.getElementById('tab-' + tabId).classList.add('active');
+            element.classList.add('active');
+        }
+
+        function toggleCity(city, btn) {
+            document.querySelectorAll('.city-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            document.querySelectorAll('.current-city').forEach(el => el.innerText = city);
+        }
+        
+        // Default Tab
+        document.getElementById('tab-trends').classList.add('active');
+    </script>
+</body>
+</html>

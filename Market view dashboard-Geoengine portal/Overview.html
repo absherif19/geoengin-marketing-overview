@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PSI Dashboard - Market Intelligence</title>
+    <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #E0592A;
+            --primary-light: #FCEEE9;
+            --deep-navy: #2C2D65;
+            --subtext: #848A92;
+            --stroke: #E7EAE9;
+            --surface: #F5F7F9;
+            --white: #FFFFFF;
+            --text-main: #111827;
+            --success: #22C55E;
+            --cyan-accent: #00acc1;
+            --radius-md: 12px;
+            --radius-sm: 8px;
+            --shadow-base: 0 4px 20px 0 rgba(0, 0, 0, 0.03);
+            /* ألوان القسم الجديد */
+            --outlook-bg: #EAF9F1;
+            --outlook-text: #15803d;
+        }
+
+        body { font-family: 'Lato', sans-serif; background-color: var(--surface); margin: 0; display: flex; color: var(--text-main); }
+
+        /* Sidebar Styling */
+        .sidebar { width: 260px; background: var(--white); height: 100vh; border-right: 1px solid var(--stroke); display: flex; flex-direction: column; position: fixed; padding: 24px 16px; z-index: 100; box-sizing: border-box; }
+        .logo { height: 32px; margin-bottom: 40px; padding-left: 8px; }
+        .nav-group { display: flex; flex-direction: column; gap: 4px; }
+        .nav-item { padding: 12px 16px; border-radius: var(--radius-sm); color: var(--deep-navy); text-decoration: none; font-size: 14px; font-weight: 600; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
+        .nav-item.active { background: var(--primary); color: var(--white); }
+        .sub-menu { overflow: hidden; display: flex; flex-direction: column; padding-left: 12px; max-height: 500px; }
+        .sub-item { padding: 10px 16px; font-size: 13px; color: var(--subtext); text-decoration: none; border-left: 2px solid var(--stroke); cursor: pointer; }
+        .sub-item.active { color: var(--primary); border-left-color: var(--primary); font-weight: 700; background: var(--primary-light); }
+        .soon-tag { font-size: 9px; background: #F1F5F9; color: var(--subtext); padding: 2px 6px; border-radius: 4px; }
+
+        /* Main Content */
+        .main-content { margin-left: 260px; padding: 40px; width: calc(100% - 260px); box-sizing: border-box; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        /* Filter Bar */
+        .filter-bar { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            background: var(--white); 
+            padding: 16px 24px; 
+            border-radius: var(--radius-md); 
+            border: 1px solid var(--stroke); 
+            margin-bottom: 30px; 
+            box-shadow: var(--shadow-base);
+        }
+        .filter-group { display: flex; align-items: center; gap: 12px; }
+        .city-toggle { display: flex; background: var(--surface); padding: 4px; border-radius: 10px; border: 1px solid var(--stroke); }
+        .city-btn { padding: 8px 16px; border: none; background: transparent; font-size: 13px; font-weight: 700; color: var(--subtext); cursor: pointer; border-radius: 8px; transition: 0.3s; }
+        .city-btn.active { background: var(--white); color: var(--deep-navy); box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        .dropdown-select { padding: 10px 16px; border-radius: 8px; border: 1px solid var(--stroke); font-family: 'Lato'; font-size: 13px; font-weight: 600; color: var(--deep-navy); outline: none; cursor: pointer; }
+        .action-btn { background: var(--surface); border: 1px solid var(--stroke); padding: 10px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; transition: 0.2s; color: var(--deep-navy); }
+        .export-btn { background: var(--deep-navy); color: var(--white); border: none; padding: 10px 20px; border-radius: 8px; font-weight: 700; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: 0.3s; }
+
+        /* Cards & Grid Layout */
+        .card { background: var(--white); border-radius: var(--radius-md); padding: 24px; border: 1px solid var(--stroke); box-shadow: var(--shadow-base); margin-bottom: 24px; }
+        .top-row-grid { display: grid; grid-template-columns: 1.5fr 1fr 1fr; gap: 24px; margin-bottom: 24px; }
+        .bottom-row-grid { display: grid; grid-template-columns: 1.5fr 1fr; gap: 24px; margin-bottom: 24px;}
+
+        /* Stats Card Specific */
+        .stats-card-container { display: flex; flex-direction: column; justify-content: space-between; height: 100%; min-height: 160px; }
+        .stats-header { color: var(--subtext); font-size: 16px; font-weight: 600; margin-bottom: 12px; }
+        .stats-value { font-size: 42px; font-weight: 900; color: var(--deep-navy); margin-bottom: 8px; }
+        .stats-trend { color: var(--success); font-weight: 700; display: flex; align-items: center; gap: 4px; font-size: 14px; margin-bottom: 16px; }
+        .stats-divider { height: 1px; background: var(--stroke); margin: 16px 0; border: none; }
+        .stats-footer { display: flex; justify-content: space-between; font-size: 14px; color: var(--subtext); font-weight: 600; }
+
+        /* Index Styles */
+        .index-number { font-size: 64px; font-weight: 900; color: var(--success); line-height: 1; }
+        .gauge-track { height: 8px; background: #EEE; border-radius: 10px; display: flex; position: relative; margin: 20px 0; }
+        .segment { height: 100%; }
+        .seg-1 { width: 40%; background: #EF4444; border-radius: 10px 0 0 10px; }
+        .seg-2 { width: 20%; background: #F59E0B; }
+        .seg-3 { width: 20%; background: #10B981; }
+        .seg-4 { width: 20%; background: #059669; border-radius: 0 10px 10px 0; }
+        .gauge-marker { position: absolute; top: -12px; left: 82%; width: 4px; height: 32px; background: var(--deep-navy); border: 2px solid white; border-radius: 4px; }
+        
+        /* Chart Styles */
+        .signals-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        .signal-item { background: var(--surface); padding: 15px; border-radius: 8px; }
+        .chart-container { position: relative; width: 100%; height: 280px; margin-top: 20px; }
+        .chart-svg { width: 100%; height: 100%; overflow: visible; }
+        .grid-line { stroke: #F1F5F9; stroke-width: 1; stroke-dasharray: 4; }
+        .axis-line { stroke: #BDC3C7; stroke-width: 1.5; fill: none; }
+        .trend-line { fill: none; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+        .chart-point { r: 5; stroke: white; stroke-width: 2; transition: r 0.2s; }
+        .play-btn { background: #F1F5F9; border: none; padding: 6px 12px; border-radius: 6px; color: var(--deep-navy); font-weight: 700; font-size: 12px; cursor: pointer; }
+
+        /* New Sections Styling (Based on Image) */
+        .outlook-container { text-align: center; padding: 16px 0; }
+        .outlook-title { font-size: 24px; font-weight: 800; color: var(--deep-navy); margin-bottom: 8px; }
+        .outlook-desc { font-size: 15px; color: var(--subtext); max-width: 600px; margin: 0 auto 32px; line-height: 1.5; }
+        .outlook-grid { display: flex; gap: 20px; justify-content: center; }
+        .outlook-card { flex: 1; background: var(--outlook-bg); border-radius: 16px; padding: 24px; text-align: center; }
+        .outlook-card .term { font-size: 14px; color: var(--deep-navy); font-weight: 600; margin-bottom: 4px; }
+        .outlook-card .duration { font-size: 12px; color: var(--subtext); margin-bottom: 12px; }
+        .outlook-card .status { font-size: 20px; font-weight: 900; color: var(--outlook-text); }
+
+        .footer-info { display: flex; justify-content: space-between; align-items: center; background: var(--white); padding: 20px 24px; border-radius: var(--radius-md); border: 1px solid var(--stroke); }
+        .source-group { display: flex; align-items: center; gap: 40px; }
+        .info-label { font-size: 10px; font-weight: 800; color: var(--subtext); text-transform: uppercase; margin-bottom: 6px; letter-spacing: 0.5px; }
+        .source-pills { display: flex; gap: 8px; }
+        .source-pill { background: #F1F5F9; border: 1px solid var(--stroke); padding: 4px 12px; border-radius: 6px; font-size: 11px; font-weight: 700; color: var(--deep-navy); }
+        .update-val { font-size: 15px; font-weight: 800; color: var(--deep-navy); }
+        .disclaimer { font-size: 11px; color: var(--subtext); font-weight: 500; }
+    </style>
+</head>
+<body>
+
+    <nav class="sidebar">
+        <img src="https://res.cloudinary.com/dfejvtpzr/image/upload/v1777294008/Psi_Logo_blue_hujns2.svg" alt="PSI" class="logo">
+        <div class="nav-group">
+            <div class="nav-item">Market Overview <span>▼</span></div>
+            <div class="sub-menu">
+                <a onclick="switchTab('overview', this)" class="sub-item active">Overview</a>
+                <a onclick="switchTab('map-areas', this)" class="sub-item">Map & Areas</a>
+                <a onclick="switchTab('trends', this)" class="sub-item">Trends</a>
+                <a onclick="switchTab('signals', this)" class="sub-item">Signals</a>
+                <a onclick="switchTab('reports', this)" class="sub-item">Reports</a>
+                <a onclick="switchTab('compare', this)" class="sub-item">Compare</a>
+            </div>
+            <a class="nav-item">City Insights <span class="soon-tag">Soon</span></a>
+            <a class="nav-item">Investment Signals <span class="soon-tag">Soon</span></a>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        
+        <div class="filter-bar">
+            <div class="filter-group">
+                <div class="city-toggle">
+                    <button class="city-btn active" onclick="toggleCity('Abudhabi', this)">Abudhabi</button>
+                    <button class="city-btn" onclick="toggleCity('Dubai', this)">Dubai</button>
+                </div>
+                <select class="dropdown-select">
+                    <option>Today</option>
+                    <option selected>Last 30 Days</option>
+                    <option>Last 90 Days</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <button class="action-btn" onclick="location.reload()" title="Refresh Data">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"></path><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
+                </button>
+                <button class="export-btn">Export</button>
+            </div>
+        </div>
+        
+        <div id="tab-overview" class="tab-content active">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+                <h1 style="font-size: 28px; font-weight: 900; color: var(--deep-navy);">Overview</h1>
+                <div style="font-size: 12px; color: var(--subtext);">Updated: 5m ago <span style="color:var(--success); font-weight:800;">● LIVE</span></div>
+            </div>
+
+            <div class="top-row-grid">
+                <div class="card" style="margin-bottom: 0;">
+                    <h3 id="city-label" style="margin:0; font-size:16px; color:var(--deep-navy)">PSI Market Index – Abudhabi</h3>
+                    <div style="display: flex; align-items: baseline; gap: 15px; margin-top:20px;">
+                        <span class="index-number">82</span>
+                        <div>
+                            <span style="color:var(--success); font-weight:800; font-size:18px;">STRONG BUY</span><br>
+                            <span style="color:var(--success); font-size:12px;">↑ +5.0 vs yesterday</span>
+                        </div>
+                    </div>
+                    <div class="gauge-track">
+                        <div class="segment seg-1"></div><div class="segment seg-2"></div>
+                        <div class="segment seg-3"></div><div class="segment seg-4"></div>
+                        <div class="gauge-marker"></div>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; font-size: 8px; font-weight: 700; color: var(--subtext);">
+                        <span>0-40 WAIT</span><span>40-60 SELECTIVE</span><span>60-80 BUY</span><span>80-100 STRONG BUY</span>
+                    </div>
+                </div>
+
+                <div class="card" style="margin-bottom: 0;">
+                    <div class="stats-card-container">
+                        <div>
+                            <div class="stats-header">24h Transactions</div>
+                            <div class="stats-value">142</div>
+                            <div class="stats-trend">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>
+                                Improving
+                            </div>
+                        </div>
+                        <div>
+                            <hr class="stats-divider">
+                            <div class="stats-footer">
+                                <span>Confidence</span>
+                                <span style="color: var(--deep-navy);">High</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card" style="margin-bottom: 0;">
+                    <div class="stats-card-container">
+                        <div>
+                            <div class="stats-header">Sales Value (24h)</div>
+                            <div class="stats-value">0.67B</div>
+                            <div style="color: var(--subtext); font-weight: 700; font-size: 14px;">AED</div>
+                        </div>
+                        <div>
+                            <hr class="stats-divider">
+                            <div class="stats-footer">
+                                <span>Data Coverage</span>
+                                <span style="color: var(--text-main);">2.8K/mo</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bottom-row-grid">
+                <div class="card">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                        <h3 style="margin:0; font-size:18px; color:var(--deep-navy)">Transaction Trend</h3>
+                        <button class="play-btn" onclick="animateTrendLine()">▶ Play</button>
+                    </div>
+                    <div class="chart-container">
+                        <svg class="chart-svg" id="trend-svg" viewBox="0 0 800 280">
+                            <!-- Y-Axis Vertical Line -->
+                            <line class="axis-line" x1="60" y1="20" x2="60" y2="230" />
+
+                            <!-- Y-Axis Ticks and Numbers -->
+                            <g font-size="12" fill="var(--subtext)" font-weight="900" text-anchor="end">
+                                <line class="axis-line" x1="55" y1="60" x2="60" y2="60" />
+                                <text x="50" y="65">2024</text>
+                                <line class="axis-line" x1="55" y1="140" x2="60" y2="140" />
+                                <text x="50" y="145">2023</text>
+                                <line class="axis-line" x1="55" y1="220" x2="60" y2="220" />
+                                <text x="50" y="225">0</text>
+                            </g>
+
+                            <!-- Horizontal Grid Lines -->
+                            <line class="grid-line" x1="60" y1="60" x2="780" y2="60" />
+                            <line class="grid-line" x1="60" y1="140" x2="780" y2="140" />
+                            
+                            <path class="trend-line" d="M60,160 L120,150 L180,170 L240,140 L300,150 L360,130 L420,160 L480,140 L540,150 L600,130 L660,120 L720,130" 
+                                  style="stroke: #CBD5E1; stroke-dasharray: 4,4;" />
+                            
+                            <path class="trend-line" id="main-trend-path" d="M60,100 L120,90 L180,110 L240,80 L300,90 L360,60 L420,80 L480,50 L540,70 L600,40 L660,50 L720,30" 
+                                  style="stroke: var(--deep-navy);" />
+
+                            <g fill="var(--deep-navy)">
+                                <circle class="chart-point" cx="60" cy="100" />
+                                <circle class="chart-point" cx="120" cy="90" />
+                                <circle class="chart-point" cx="180" cy="110" />
+                                <circle class="chart-point" cx="240" cy="80" />
+                                <circle class="chart-point" cx="300" cy="90" />
+                                <circle class="chart-point" cx="360" cy="60" />
+                                <circle class="chart-point" cx="420" cy="80" />
+                                <circle class="chart-point" cx="480" cy="50" />
+                                <circle class="chart-point" cx="540" cy="70" />
+                                <circle class="chart-point" cx="600" cy="40" />
+                                <circle class="chart-point" cx="660" cy="50" />
+                                <circle class="chart-point" cx="720" cy="30" />
+                            </g>
+
+                            <g font-size="11" fill="var(--subtext)" font-weight="700">
+                                <text x="50" y="260">Jan</text>
+                                <text x="110" y="260">Feb</text>
+                                <text x="170" y="260">Mar</text>
+                                <text x="230" y="260">Apr</text>
+                                <text x="290" y="260">May</text>
+                                <text x="350" y="260">Jun</text>
+                                <text x="410" y="260">Jul</text>
+                                <text x="470" y="260">Aug</text>
+                                <text x="530" y="260">Sep</text>
+                                <text x="590" y="260">Oct</text>
+                                <text x="650" y="260">Nov</text>
+                                <text x="710" y="260">Dec</text>
+                            </g>
+                        </svg>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 style="margin:0 0 20px 0; font-size:16px; color:var(--deep-navy)">4 Key Market Signals</h3>
+                    <div class="signals-grid">
+                        <div class="signal-item"><div style="font-size:10px; color:var(--subtext);">Activity</div><div style="font-size:24px; font-weight:900; color:var(--success);">100</div></div>
+                        <div class="signal-item"><div style="font-size:10px; color:var(--subtext);">Price</div><div style="font-size:24px; font-weight:900; color:var(--deep-navy);">80</div></div>
+                        <div class="signal-item"><div style="font-size:10px; color:var(--subtext);">Demand</div><div style="font-size:24px; font-weight:900; color:var(--success);">69</div></div>
+                        <div class="signal-item"><div style="font-size:10px; color:var(--subtext);">Global</div><div style="font-size:24px; font-weight:900; color:var(--success);">74</div></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- New Market Outlook Section -->
+            <div class="card">
+                <div class="outlook-container">
+                    <h2 class="outlook-title">Market Outlook</h2>
+                    <p class="outlook-desc">
+                        Abu Dhabi's real estate market shows strong momentum supported by healthy demand, stable pricing and positive global sentiment.
+                    </p>
+                    <div class="outlook-grid">
+                        <div class="outlook-card">
+                            <div class="term">Short Term</div>
+                            <div class="duration">1–3 Months</div>
+                            <div class="status">Very Positive</div>
+                        </div>
+                        <div class="outlook-card">
+                            <div class="term">Mid Term</div>
+                            <div class="duration">3–6 Months</div>
+                            <div class="status">Very Positive</div>
+                        </div>
+                        <div class="outlook-card">
+                            <div class="term">Long Term</div>
+                            <div class="duration">6–12 Months</div>
+                            <div class="status">Positive</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- New Footer Info Bar -->
+            <div class="footer-info">
+                <div class="source-group">
+                    <div>
+                        <div class="info-label">Data Sources</div>
+                        <div class="source-pills">
+                            <div class="source-pill">DLD</div>
+                            <div class="source-pill">Bayut</div>
+                            <div class="source-pill">Property Finder</div>
+                        </div>
+                    </div>
+                    <div style="width: 1px; height: 35px; background: var(--stroke);"></div>
+                    <div>
+                        <div class="info-label">Last Updated</div>
+                        <div class="update-val">5 minutes ago</div>
+                    </div>
+                </div>
+                <div class="disclaimer">
+                    PSI is a computed indicator, not financial advice
+                </div>
+            </div>
+        </div>
+
+        <div id="tab-map-areas" class="tab-content"><h1>Map & Areas Content</h1></div>
+    </main>
+
+    <script>
+        function switchTab(tabId, element) {
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.sub-item').forEach(item => item.classList.remove('active'));
+            const target = document.getElementById('tab-' + tabId);
+            if (target) target.classList.add('active');
+            element.classList.add('active');
+        }
+
+        function toggleCity(city, btn) {
+            document.querySelectorAll('.city-btn').forEach(el => el.classList.remove('active'));
+            btn.classList.add('active');
+            document.getElementById('city-label').innerText = 'PSI Market Index – ' + city;
+        }
+
+        function animateTrendLine() {
+            const path = document.getElementById('main-trend-path');
+            const length = path.getTotalLength();
+            path.style.transition = 'none';
+            path.style.strokeDasharray = length + ' ' + length;
+            path.style.strokeDashoffset = length;
+            path.getBoundingClientRect();
+            path.style.transition = 'stroke-dashoffset 1.5s ease-in-out';
+            path.style.strokeDashoffset = '0';
+        }
+
+        window.onload = animateTrendLine;
+    </script>
+</body>
+</html>
